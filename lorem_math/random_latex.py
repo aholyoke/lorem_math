@@ -41,15 +41,19 @@ def flatten_gen(gen):
 
 
 class RandomFormula(object):
-    def __init__(self, random_seed=None):
+    def __init__(self, num_equal_signs=0, random_seed=None):
         # Provide random_seed if you want to generate the same formula twice
         self.seed = seed
         seed(random_seed)
 
-        # We should convert this to nested lists if we want to do
-        # any post-processing on the structure before flattening it.
-        self.structure = self.start()
-        self.formula = "".join(flatten_gen(self.structure))
+        self.formulae = []
+        for i in range(num_equal_signs + 1):
+            # We should convert this to nested lists if we want to do
+            # any post-processing on the structure before flattening it.
+            self.structure = self.start()
+            self.formulae.append("".join(flatten_gen(self.structure)))
+
+        self.formula = " = ".join(self.formulae)
 
     def one_of(self, *options):
         ''' self.one_of("x", "y") calls either self.random_x or self.random_y
