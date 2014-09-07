@@ -104,9 +104,9 @@ class RandomFormula(object):
 
     def random_term(self):
         return self.one_of_distribute(
-            multiply=(2, 9),
-            factor=(2, 3),
-            fraction=(1, 9))
+            multiply=(3, 10),
+            factor=(6, 10),
+            fraction=(1, 10))
 
     def random_multiply(self):
         yield self.random_term()
@@ -122,7 +122,21 @@ class RandomFormula(object):
         return choice("xyab")
 
     def random_greek(self):
-        return choice(["{\pi}", "{\sigma}", "{\phi}", "{\lambda}", "{\psi}"])
+        return choice([
+            "{\pi}",
+            "{\sigma}",
+            "{\Sigma}",
+            "{\phi}",
+            "{\lambda}",
+            "{\psi}",
+            "{\\theta}",
+            "{\gamma}",
+            "{\mu}",
+            "{\Omega}",
+            "{\\alpha}",
+            "{\\beta}",
+            "{\Gamma}",
+            "{\epsilon}"])
 
     def random_fraction(self):
         yield "\\frac{"
