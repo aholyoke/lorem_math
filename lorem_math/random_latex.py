@@ -1,4 +1,5 @@
 from random import choice, randint, seed
+from copy import deepcopy, copy
 '''
 Example Usage:
 
@@ -52,15 +53,14 @@ class RandomFormula(object):
             # any post-processing on the structure before flattening it.
             self.structure = self.start()
             self.formulae.append("".join(flatten_gen(self.structure)))
-
-        self.formula = " = ".join(self.formulae)
+        self.formula = "\\\\ = ".join(self.formulae)
 
     def one_of(self, *options):
         ''' self.one_of("x", "y") calls either self.random_x or self.random_y
         with equal likeliness '''
         return getattr(self, "random_" + choice(options))()
 
-    def one_of_distribute(self, arg_dict={}, safe=True, **options_with_ratios):
+    def one_of_distribute(self, context, safe=True, **options_with_ratios):
         ''' self.one_of_distribute(x=(2,3), y=(1,3)) calls either self.random_x
         with 2/3 likeliness or self.random_y with 1/3 likeliness. When safe is
         True this function will check that the probabilities add to 1 '''
@@ -84,97 +84,105 @@ class RandomFormula(object):
             frac_num, frac_den = fraction[0], fraction[1]
             rem_num, rem_den = remaining[0], remaining[1]
             if chance(frac_num * rem_den, frac_den * rem_num):
-                return getattr(self, "random_" + option)(**arg_dict)
+                return getattr(self, "random_" + option)(context)
 
             # remaining - fraction
             remaining = (rem_num * frac_den - frac_num * rem_den,
                          frac_den * rem_den)
 
     def start(self):
-        return self.random_expression()
+        context = {'make_smaller': 0, 'variables': []}
+        return self.random_expression(context)
 
-    def random_expression(self, make_smaller=0, variables=None):
-        ''' 0 <= make_smaller <= 100 '''
-        variables = variables or []
+    def random_expression(self, context):
+        make_smaller = context['make_smaller']
         return self.one_of_distribute(
-            arg_dict={'make_smaller': make_smaller, 'variables': variables},
+            context,
             term=(300 + 2 * make_smaller, 1000),
             add_or_subtract=(550 - make_smaller, 1000),
             limit=(100 - make_smaller, 1000),
             function=(50, 1000))
 
-    def random_function(self, make_smaller=0, variables=None):
-        variables = variables or []
+    def random_function(self, context):
+        # We need a deepcopy context here since variables may be added
+        new_context = deepcopy(context)
         yield choice(["f(", "g(", "h(", "sin(", "cos(", "tan(", "log(", "ln("])
         for i in range(randint(0, 2)):
-            variable = self.random_variable(variables)
-            variables.append(variable)
+            variable = self.random_variable(new_context)
+            new_context['variables'].append(variable)
             yield variable
             yield ", "
-        variable = self.random_variable(variables)
-        variables.append(variable)
+        variable = self.random_variable(new_context)
+        new_context['variables'].append(variable)
         yield variable
         yield ") = "
-        yield self.random_expression(50, variables)
+        yield self.random_expression(new_context)
 
-    def random_limit(self, make_smaller=0, variables=None):
-        variables = variables or []
+    def random_limit(self, context):
+        new_context = deepcopy(context)
         yield "\lim_{"
-        yield self.random_variable(variables)
+        variable = self.random_variable(new_context)
+        new_context['variables'].append(variable)
+        yield variable
         yield " \\to "
         yield self.one_of_distribute(
+            new_context,
             number=(1, 3),
             infinity=(2, 3))
         yield "}"
-        yield self.random_expression(max(25, make_smaller), variables)
+        new_context['make_smaller'] = max(25, new_context['make_smaller'])
+        yield self.random_expression(new_context)
 
-    def random_infinity(self):
+    def random_infinity(self, context):
         return choice(["\infty", "-\infty"])
 
-    def random_add_or_subtract(self, make_smaller=0, variables=None):
-        variables = variables or []
-        yield self.random_expression(50, variables)
+    def random_add_or_subtract(self, context):
+        new_context = copy(context)
+        new_context['make_smaller'] = 50
+        yield self.random_expression(new_context)
         yield choice([" + ", " - "])
-        yield self.random_term(10, variables)
+        new_context = copy(context)
+        new_context['make_smaller'] = 10
+        yield self.random_term(new_context)
 
-    def random_term(self, make_smaller=0, variables=None):
-        variables = variables or []
+    def random_term(self, context):
+        make_smaller = context['make_smaller']
         return self.one_of_distribute(
-            arg_dict={'make_smaller': make_smaller, 'variables': variables},
-            multiply=(250, 1000),
-            factor=(650 + make_smaller, 1000),
-            fraction=(100 - make_smaller, 1000))
+            context,
+            multiply=(2900, 10000),
+            factor=(7000 + make_smaller, 10000),
+            fraction=(100 - make_smaller, 10000))
 
-    def random_multiply(self, make_smaller=0, variables=None):
-        variables = variables or []
-        yield self.random_term(10, variables)
-        yield self.random_factor(0, variables)
+    def random_multiply(self, context):
+        new_context = copy(context)
+        new_context['make_smaller'] = 10
+        yield self.random_term(new_context)
+        yield self.random_factor(new_context)
 
-    def random_factor(self, make_smaller=0, variables=None):
-        variables = variables or []
+    def random_factor(self, context):
         yield self.one_of_distribute(
-            arg_dict={'variables': variables},
+            context,
             number=(5, 10),
             greek=(3, 10),
             variable=(2, 10))
 
-        if chance(1, 5):
-            yield self.random_sub_or_sup()
+        if chance(100 - context['make_smaller'], 500):
+            yield self.random_sub_or_sup(context)
 
-    def random_sub_or_sup(self):
+    def random_sub_or_sup(self, context):
         yield choice("_^")
         yield "{"
-        yield self.random_expression(100)
+        yield self.random_expression(context)
         yield "}"
 
-    def random_variable(self, variables=None):
-        variables = variables or []
-        if variables == []:  # generate a new variable
+    def random_variable(self, context):
+        variables = context['variables']
+        if variables == [] or chance(1, 3):  # generate a new variable
             return choice(["x", "y", "a", "b", "{\\theta}"])
         else:  # return a previously used variable
             return choice(variables)
 
-    def random_greek(self, variables=None):
+    def random_greek(self, context):
         return choice([
             "{\pi}",
             "{\sigma}",
@@ -191,15 +199,16 @@ class RandomFormula(object):
             "{\Gamma}",
             "{\epsilon}"])
 
-    def random_fraction(self, make_smaller=0, variables=None):
-        variables = variables or []
+    def random_fraction(self, context):
         yield "\\frac{"
-        yield self.random_expression(max(80, make_smaller))
+        new_context = copy(context)
+        new_context['make_smaller'] = 100
+        yield self.random_expression(new_context)
         yield "}{"
-        yield self.random_expression(max(95, make_smaller))
+        yield self.random_expression(new_context)
         yield "}"
 
-    def random_number(self, variables=None):
+    def random_number(self, context):
         yield choice("123456789")
         for i in range(randint(0, 3)):
             yield choice("01234567")
