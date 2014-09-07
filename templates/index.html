@@ -21,6 +21,9 @@
 	<script type="text/javascript"
 	  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 	</script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="/static/js/zeroclipboard/dist/ZeroClipboard.js"></script>
+  <script src="/static/js/main.js"></script>
 
   </head>
 
@@ -48,12 +51,15 @@
             <p class="lead">
               <a href="/" class="btn btn-lg btn-default">Generate Equation</a>
             </p>
-            <p class="randomLatex">    
+            <p class="randomLatex" id="to_copy">    
             	
               \[
               {{formula}}
               \]
-			</p>
+			      </p>
+            <p class="lead">
+                <a id="copy_latex" class="btn btn-mini btn-default" data-clipboard-target="to_copy">Copy Raw LaTeX to Clipboard</a>
+            </p>
           </div>
 
           <div class="mastfoot">
