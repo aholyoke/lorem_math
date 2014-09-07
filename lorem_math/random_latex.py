@@ -60,11 +60,10 @@ class RandomFormula(object):
         with equal likeliness '''
         return getattr(self, "random_" + choice(options))()
 
-    def one_of_distribute(self, safe=True, **options_with_ratios):
+    def one_of_distribute(self, arg_dict={}, safe=True, **options_with_ratios):
         ''' self.one_of_distribute(x=(2,3), y=(1,3)) calls either self.random_x
         with 2/3 likeliness or self.random_y with 1/3 likeliness. When safe is
-        True this function will check that the probabilities add to 1
-        '''
+        True this function will check that the probabilities add to 1 '''
         if safe:
             # eg. {x:(2,3), y:(1,3)} gives 1 * 3 * 3 = 9
             product_of_denominators = reduce(
@@ -85,7 +84,7 @@ class RandomFormula(object):
             frac_num, frac_den = fraction[0], fraction[1]
             rem_num, rem_den = remaining[0], remaining[1]
             if chance(frac_num * rem_den, frac_den * rem_num):
-                return getattr(self, "random_" + option)()
+                return getattr(self, "random_" + option)(**arg_dict)
 
             # remaining - fraction
             remaining = (rem_num * frac_den - frac_num * rem_den,
