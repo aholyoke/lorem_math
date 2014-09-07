@@ -114,7 +114,7 @@ class RandomFormula(object):
         return choice("xyab")
 
     def random_greek(self):
-        return choice(["\pi", "\sigma", "\phi", "\lambda", "\psi"])
+        return choice(["{\pi}", "{\sigma}", "{\phi}", "{\lambda}", "{\psi}"])
 
     def random_fraction(self):
         yield "\\frac{"
