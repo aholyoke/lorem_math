@@ -93,50 +93,88 @@ class RandomFormula(object):
     def start(self):
         return self.random_expression()
 
-    def random_expression(self):
+    def random_expression(self, make_smaller=0, variables=None):
+        ''' 0 <= make_smaller <= 100 '''
+        variables = variables or []
         return self.one_of_distribute(
-            term=(3, 10),
-            add_or_subtract=(6, 10),
-            limit=(1, 10))
+            arg_dict={'make_smaller': make_smaller, 'variables': variables},
+            term=(300 + 2 * make_smaller, 1000),
+            add_or_subtract=(550 - make_smaller, 1000),
+            limit=(100 - make_smaller, 1000),
+            function=(50, 1000))
 
-    def random_limit(self):
+    def random_function(self, make_smaller=0, variables=None):
+        variables = variables or []
+        yield choice(["f(", "g(", "h(", "sin(", "cos(", "tan(", "log(", "ln("])
+        for i in range(randint(0, 2)):
+            variable = self.random_variable(variables)
+            variables.append(variable)
+            yield variable
+            yield ", "
+        variable = self.random_variable(variables)
+        variables.append(variable)
+        yield variable
+        yield ") = "
+        yield self.random_expression(50, variables)
+
+    def random_limit(self, make_smaller=0, variables=None):
+        variables = variables or []
         yield "\lim_{"
-        yield self.random_variable()
+        yield self.random_variable(variables)
         yield " \\to "
         yield self.one_of_distribute(
             number=(1, 3),
             infinity=(2, 3))
         yield "}"
-        yield self.random_expression()
+        yield self.random_expression(max(25, make_smaller), variables)
 
     def random_infinity(self):
         return choice(["\infty", "-\infty"])
 
-    def random_add_or_subtract(self):
-        yield self.random_expression()
+    def random_add_or_subtract(self, make_smaller=0, variables=None):
+        variables = variables or []
+        yield self.random_expression(50, variables)
         yield choice([" + ", " - "])
-        yield self.random_term()
+        yield self.random_term(10, variables)
 
-    def random_term(self):
+    def random_term(self, make_smaller=0, variables=None):
+        variables = variables or []
         return self.one_of_distribute(
-            multiply=(6, 20),
-            factor=(13, 20),
-            fraction=(1, 20))
+            arg_dict={'make_smaller': make_smaller, 'variables': variables},
+            multiply=(250, 1000),
+            factor=(650 + make_smaller, 1000),
+            fraction=(100 - make_smaller, 1000))
 
-    def random_multiply(self):
-        yield self.random_term()
-        yield self.random_factor()
+    def random_multiply(self, make_smaller=0, variables=None):
+        variables = variables or []
+        yield self.random_term(10, variables)
+        yield self.random_factor(0, variables)
 
-    def random_factor(self):
-        return self.one_of_distribute(
+    def random_factor(self, make_smaller=0, variables=None):
+        variables = variables or []
+        yield self.one_of_distribute(
+            arg_dict={'variables': variables},
             number=(5, 10),
             greek=(3, 10),
             variable=(2, 10))
 
-    def random_variable(self):
-        return choice("xyab")
+        if chance(1, 5):
+            yield self.random_sub_or_sup()
 
-    def random_greek(self):
+    def random_sub_or_sup(self):
+        yield choice("_^")
+        yield "{"
+        yield self.random_expression(100)
+        yield "}"
+
+    def random_variable(self, variables=None):
+        variables = variables or []
+        if variables == []:  # generate a new variable
+            return choice(["x", "y", "a", "b", "{\\theta}"])
+        else:  # return a previously used variable
+            return choice(variables)
+
+    def random_greek(self, variables=None):
         return choice([
             "{\pi}",
             "{\sigma}",
@@ -153,14 +191,15 @@ class RandomFormula(object):
             "{\Gamma}",
             "{\epsilon}"])
 
-    def random_fraction(self):
+    def random_fraction(self, make_smaller=0, variables=None):
+        variables = variables or []
         yield "\\frac{"
-        yield self.random_expression()
+        yield self.random_expression(max(80, make_smaller))
         yield "}{"
-        yield self.random_expression()
+        yield self.random_expression(max(95, make_smaller))
         yield "}"
 
-    def random_number(self):
+    def random_number(self, variables=None):
         yield choice("123456789")
-        for i in range(randint(0, 5)):
+        for i in range(randint(0, 3)):
             yield choice("01234567")
