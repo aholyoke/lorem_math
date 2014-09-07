@@ -95,18 +95,34 @@ class RandomFormula(object):
         return self.random_expression()
 
     def random_expression(self):
-        return self.one_of_distribute(term=(1, 2), add_or_subtract=(1, 2))
+        return self.one_of_distribute(
+            term=(3, 10),
+            add_or_subtract=(6, 10),
+            limit=(1, 10))
+
+    def random_limit(self):
+        yield "\lim_{"
+        yield self.random_variable()
+        yield " \\to "
+        yield self.one_of_distribute(
+            number=(1, 3),
+            infinity=(2, 3))
+        yield "}"
+        yield self.random_expression()
+
+    def random_infinity(self):
+        return choice(["\infty", "-\infty"])
 
     def random_add_or_subtract(self):
-        yield self.random_term()
-        yield choice([" + ", " - "])
         yield self.random_expression()
+        yield choice([" + ", " - "])
+        yield self.random_term()
 
     def random_term(self):
         return self.one_of_distribute(
-            multiply=(3, 10),
-            factor=(6, 10),
-            fraction=(1, 10))
+            multiply=(6, 20),
+            factor=(13, 20),
+            fraction=(1, 20))
 
     def random_multiply(self):
         yield self.random_term()
