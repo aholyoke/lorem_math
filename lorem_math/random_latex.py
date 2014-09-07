@@ -106,9 +106,9 @@ class RandomFormula(object):
 
     def random_factor(self):
         return self.one_of_distribute(
-            number=(2, 3),
-            greek=(1, 9),
-            variable=(2, 9))
+            number=(5, 10),
+            greek=(3, 10),
+            variable=(2, 10))
 
     def random_variable(self):
         return choice("xyab")
